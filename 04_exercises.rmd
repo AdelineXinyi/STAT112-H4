@@ -203,6 +203,6 @@ mpls_nbhd <- st_read("Minneapolis_Neighborhoods/Minneapolis_Neighborhoods.shp", 
 ## GitHub link
 
   19. Below, provide a link to your GitHub page with this set of Weekly Exercises. Specifically, if the name of the file is 04_exercises.Rmd, provide a link to the 04_exercises.md file, which is the one that will be most readable on GitHub.
-
+[here]https://github.com/AdelineXinyi/STAT112-H4/blob/76fcf20f3a160bd3e4af6b3ffe86db2e310e3b50/04_exercises.rmd
 
 **DID YOU REMEMBER TO UNCOMMENT THE OPTIONS AT THE TOP?**
