@@ -12,7 +12,7 @@ output:
 
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
+knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
 ```
 
 ```{r libraries}
@@ -28,7 +28,9 @@ library(sf)            # for working with spatial data
 library(leaflet)       # for highly customizable mapping
 library(carData)       # for Minneapolis police stops data
 library(ggthemes)      # for more themes (including theme_map())
+library(googlesheets4) # for reading googlesheet data
 theme_set(theme_minimal())
+
 ```
 
 ```{r data}
@@ -106,7 +108,8 @@ ggmap(world) +
              aes(x = Longitude, y = Latitude,color=Starbucks$`Ownership Type`), 
              alpha = .3, 
              size = .1) +
-  theme_map()
+  theme_map()+
+  theme(legend.background = element_blank())
 ```
 
 **Company owned and licensed starbucks count for the most starbucks in the world.**
@@ -152,7 +155,7 @@ twincity <- ggmap(twincity_map) +
             aes(x = Starbucks$Longitude, y = Starbucks$Latitude),
             size = .3) +
   theme_map()
-twincity+annotate(geom = "text", x = -93.1, y = 44.9, label = "Macalester College",col="red")
+twincity+annotate(geom = "text", x = -93.1, y = 44.9, label = "Macalester College", col="red")
 #show the point as well?
 ```
 
@@ -174,8 +177,32 @@ starbucks_with_2018_pop_est <-
 ```
 
   6. **`dplyr` review**: Look through the code above and describe what each line of code does.
+**For census_pop_est_2018:AFTER assigning name of the data set, the first line of code reads in a csv file containing the original data set, the second line seperate the cgarcters as state variables to dot and state string variables in the way of merging, the third line gets rid of the dot variable, the fourth line transforms state variable to lower cases.**
+**For starbucks:after assigning name to the new dataset, the new data set is based on the starbucks_us_by_state data set, and the second line joins this dataset with census_pop_est_2018 dataset from the left by state variable, and the last line calculates the number of starbucks per 10000 people have.**
 
   7. Create a choropleth map that shows the number of Starbucks per 10,000 people on a map of the US. Use a new fill color, add points for all Starbucks in the US (except Hawaii and Alaska), add an informative title for the plot, and include a caption that says who created the plot (you!). Make a conclusion about what you observe.
+```{r}
+us<-map_data("state")
+starbucks_with_2018_pop_est %>% 
+  ggplot() +
+  geom_map(map = us ,
+           aes(map_id = state_name, # a special level
+               fill = starbucks_per_10000)) + 
+  expand_limits(x = us$long , y =us$lat) + 
+  geom_point(data = Starbucks %>% filter(Country == "US",`State/Province` !="HI",`State/Province` !="AK") ,
+             aes(x = Longitude, y = Latitude),
+             size = .05,
+             alpha = .2, 
+             color = "goldenrod") +
+  theme_map()+
+  theme(legend.background = element_blank())
+
+#easier way to do filter not in
+```
+
+
+**Conclusion:Generally, western part of us has higher rate of starbucks per 10000 people, and starbucks are more condensly distributed along west coast and east coast than any other places.**
+
 
 ### A few of your favorite things (`leaflet`)
 
@@ -183,11 +210,46 @@ starbucks_with_2018_pop_est <-
 
   * Create a data set using the `tibble()` function that has 10-15 rows of your favorite places. The columns will be the name of the location, the latitude, the longitude, and a column that indicates if it is in your top 3 favorite locations or not. For an example of how to use `tibble()`, look at the `favorite_stp_by_lisa` I created in the data R code chunk at the beginning.  
 
-  * Create a `leaflet` map that uses circles to indicate your favorite places. Label them with the name of the place. Choose the base map you like best. Color your 3 favorite places differently than the ones that are not in your top 3 (HINT: `colorFactor()`). Add a legend that explains what the colors mean.  
-  
+  * Create a `leaflet` map that uses circles to indicate your favorite places. Label them with the name of the place. Choose the base map you like best.http://leaflet-extras.github.io/leaflet-providers/preview/
+Color your 3 favorite places differently than the ones that are not in your top 3 (HINT: `colorFactor()`). Add a legend that explains what the colors mean.  
+
   * Connect all your locations together with a line in a meaningful way (you may need to order them differently in the original data).  
   
   * If there are other variables you want to add that could enhance your plot, do that now.  
+  
+```{r}
+favorite_stp_by_xinyi <- tibble(
+  place = c("XILING YINSHE", "XI HU", "WUHOU CI", 
+            "HUANG HE LOU", "GU GONG", "JUN SHAN",
+            "YAN MEN GUAN", "BEI MANG SHAN", "QIAN DAO HU",
+            "HUA SHAN","YUMEN GUAN","TAIBAI SHAN"),
+  long = c(120.13404, 120.0916, 104.03955, 
+           114.29559, 116.3791, 112.5055, 
+           112.7666, 112.3385, 118.1923,
+           118.25439, 93.86263,107.5204),
+  lat = c(30.253476, 30.2678, 30.65110,
+          30.54776, 39.9213, 29.6558, 
+          39.2279, 34.7667, 29.9204,
+          28.60137,40.35417,34.0322)
+  )
+favorite_stp_by_xinyi<-favorite_stp_by_xinyi %>% 
+  filter(place%in%c("BEI MANG SHAN","XI HU","YAN MEN GUAN")) %>% 
+  mutate(best=1)
+favorite_stp_by_xinyi<-favorite_stp_by_xinyi %>% 
+  filter(place!="BEI MANG SHAN",place!="XI HU",place!="YAN MEN GUAN") %>% 
+  mutate(best=2)
+pal <- colorFactor(palette = "magma",
+                    domain=favorite_stp_by_xinyi$place)
+leaflet(favorite_stp_by_xinyi) %>% 
+  addTiles() %>% 
+  addCircles(lng = ~long, 
+             lat = ~lat, 
+             label = ~place,
+             color = ~pal(place)) %>% 
+  addLegend(position = "topleft",
+            pal = pal,
+            values = ~place)
+```
   
 ## Revisiting old datasets
 
