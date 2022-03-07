@@ -110,6 +110,8 @@ ggmap(world) +
              size = .1) +
   theme_map()+
   theme(legend.background = element_blank())
+
+#enlarge legend
 ```
 
 **Company owned and licensed starbucks count for the most starbucks in the world.**
@@ -124,13 +126,14 @@ twincity_map <- get_stamenmap(
 ggmap(twincity_map) +
   geom_point(data = Starbucks, 
             aes(x = Starbucks$Longitude, y = Starbucks$Latitude),
-            size = .3) +
+            size = .3,
+            col="blue") +
   theme_map()
 
-#how to set color 
 ```
 
   3. In the Twin Cities plot, play with the zoom number. What does it do?  (just describe what it does - don't actually include more than one map).  
+  
 **It makes the map shows more detail along with the increasing number.**
 
   4. Try a couple different map types (see `get_stamenmap()` in help and look at `maptype`). Include a map with one of the other map types.  
@@ -144,7 +147,8 @@ twincity_map <- get_stamenmap(
 ggmap(twincity_map) +
   geom_point(data = Starbucks, 
             aes(x = Starbucks$Longitude, y = Starbucks$Latitude),
-            size = .3) +
+            size = .3,
+            col="blue") +
   theme_map()
 ```
 
@@ -155,8 +159,10 @@ twincity <- ggmap(twincity_map) +
             aes(x = Starbucks$Longitude, y = Starbucks$Latitude),
             size = .3) +
   theme_map()
-twincity+annotate(geom = "text", x = -93.1, y = 44.9, label = "Macalester College", col="red")
-#show the point as well?
+twincity+
+  annotate(geom = "text", x = -93.1, y = 44.92, label = "Macalester College", col="red")+
+  annotate(geom="point",x = -93.1, y = 44.9,col="red")
+
 ```
 
 ### Choropleth maps with Starbucks data (`geom_map()`)
@@ -189,15 +195,13 @@ starbucks_with_2018_pop_est %>%
            aes(map_id = state_name, # a special level
                fill = starbucks_per_10000)) + 
   expand_limits(x = us$long , y =us$lat) + 
-  geom_point(data = Starbucks %>% filter(Country == "US",`State/Province` !="HI",`State/Province` !="AK") ,
+  geom_point(data = Starbucks %>% filter(Country == "US", !(`State/Province` %in% c("HI","AK"))) ,
              aes(x = Longitude, y = Latitude),
              size = .05,
              alpha = .2, 
              color = "goldenrod") +
   theme_map()+
   theme(legend.background = element_blank())
-
-#easier way to do filter not in
 ```
 
 
@@ -304,6 +308,8 @@ ggmap(dc_map) +
   theme(legend.background = element_blank())+
   theme(plot.title = element_text(hjust = 0.5,colour = "black", face = "bold", 
     size = 14, vjust = 1))
+
+#doesn't seem to be right
 ```
   
   10. Only 14.4% of the trips in our data are carried out by casual users. Create a plot that shows which area(s) have stations with a much higher percentage of departures by casual users. What patterns do you notice? Also plot this on top of a map. I think it will be more clear what the patterns are.
@@ -325,6 +331,8 @@ ggmap(dc_map) +
   theme(legend.background = element_blank())+
   theme(plot.title = element_text(hjust = 0.5,colour = "black", face = "bold", 
     size = 14, vjust = 1))
+
+#doesn't seem to be right
 ```
 **pattern:**
 
@@ -384,7 +392,8 @@ mpls_suspicious<-MplsStops %>%
   mutate(total_stops=n(),
          sus_stop=sum(problem=="suspicious"),
          prop_suspicious=sus_stop/total_stops) %>% 
-  arrange(desc(total_stops))
+  arrange(desc(total_stops)) %>% 
+  filter(!is.na(prop_suspicious))
 
 mpls_suspicious
 ```
@@ -424,7 +433,8 @@ mpls_all<-mpls_nbhd %>%
   17. Use `leaflet` to create a map from the `mpls_all` data  that colors the neighborhoods by `prop_suspicious`. Display the neighborhood name as you scroll over it. Describe what you observe in the map.
 ```{r}
 pal=colorNumeric(palette = "magma",
-                 domain=mpls_all$prop_suspicious)
+                 domain=mpls_all$prop_suspicious,
+                 na.color = NA)
 
 leaflet(mpls_all) %>% 
   addProviderTiles(providers$OpenStreetMap) %>% 
@@ -434,16 +444,50 @@ leaflet(mpls_all) %>%
              label = ~neighborhood) %>% 
   addLegend(position = "topleft",
             pal=pal,
-            value=~prop_suspicious)
-
-#NA
+            value=~prop_suspicious,
+            na.label = "",
+            title = "Proportion</br>of suspicious")
+#do we need na
 ```
   
   **Pattern:**
   
   18. Use `leaflet` to create a map of your own choosing. Come up with a question you want to try to answer and use the map to help answer that question. Describe what your map shows. 
+  
+**The line shape of main city in each provinces in main land China from west to east.**
 ```{r}
+main_city_china <- tibble(
+  place = c("BeiJing", "Tian Jing", "Shanghai", 
+            "Hangzhou", "Guiyang", "Zhenzhou",
+            "Wuhan", "Shijiangzhuang", "Guilin",
+            "Haikou","Nanjing","Guangzhou",
+            "Chengdu","Chongqing","Lasa",
+            "Wulumuqi","Changsha","Nanchang"),
+  long = c(116, 117, 117.5, 
+           119, 112.5, 113, 
+           114, 115.1185, 109.8,
+           108.9927, ),
+  lat = c(40.2156, 39, 40.2227,
+          30.5788, 25.9383, 34, 
+          30, 30.75, 25.4216,
+          25.2530,)
+  )
+main_city_china<-main_city_china %>% 
+  arrange(long)
 
+pal <- colorFactor(palette = "magma",
+                    domain=main_city_china$lat)
+leaflet(main_city_china) %>% 
+  addProviderTiles(providers$Stamen.Watercolor) %>%  
+  addCircles(lng = ~long, 
+             lat = ~lat, 
+             label = ~place,
+             color = ~pal(lat)) %>% 
+  addPolylines(lng = ~long, 
+               lat = ~lat, 
+               color = col2hex("darkred"))
+
+#missing 8
 ```
   
   
