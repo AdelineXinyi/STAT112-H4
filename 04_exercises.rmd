@@ -299,10 +299,11 @@ Stations<-read_csv("http://www.macalester.edu/~dshuman1/data/112/DC-Stations.csv
   9. Use the latitude and longitude variables in `Stations` to make a visualization of the total number of departures from each station in the `Trips` data. Use either color or size to show the variation in number of departures. This time, plot the points on top of a map. Use any of the mapping tools you'd like.
   
 ```{r}
+#the zooming level will get rid of some points on the edge
 dc_map <- get_stamenmap(
-    bbox = c(left =-77.1831 , bottom =38.8079 , right =-76.8089 , top = 38.9653), 
+    bbox = c(left =-77.2 , bottom =38.78 , right =-76.9 , top = 39), 
     maptype = "terrain", 
-    zoom = 12)
+    zoom = 13)
 
 fake_trip<-Trips %>% 
   mutate(name=sstation) %>% 
@@ -314,13 +315,12 @@ fake_trip<-Trips %>%
 
 ggmap(dc_map) +
   geom_point(data = fake_trip, 
-            aes(x = long, y = lat,color=n),
-            size = .5) +
+            aes(x = long, y = lat,color=n)) +
   scale_color_viridis_c()+
   labs(title = "Total departure from each stations",
        x="longitude",
        y="latitude",
-       fill="number of departures")+
+       color="number of departures")+
   theme_map()+
   theme(legend.background = element_blank(),
         legend.position = "right")+
@@ -341,17 +341,17 @@ casual_trip<-Trips %>%
 
 ggmap(dc_map) +
   geom_point(data = casual_trip, 
-            aes(x = long, y = lat,color=portionCasual),
-            size = .5) +
+            aes(x = long, y = lat,color=portionCasual)) +
   scale_color_viridis_c()+
-  labs(title = "Total departure from each stations",x="longitude",y="latitude")+
+  labs(title = "Total departure from each stations",
+       x="longitude",
+       y="latitude")+
   theme_map()+
   theme(legend.background = element_blank(),
         legend.position = "right")+
   theme(plot.title = element_text(hjust = 0.5,colour = "black", face = "bold", 
     size = 14, vjust = 1))
 
-#doesn't seem to be right
 ```
 **pattern:Casual users departures have a really low occupation rate in the city center, as most points show the portion lower than 0.2, which means registered users count more.**
 
@@ -399,7 +399,7 @@ covid_pop %>%
   theme_map()+
   theme(legend.background = element_blank())+
   scale_fill_continuous_tableau(label=scales::comma)+
-  labs(title="Most recent proportion of cumulative number in 10000 people number of COVID-19 cases",
+  labs(title="Most recent proportion of cumulative number\nin 10000 people number of COVID-19 cases",
        fill="cases\nper 10000 people")+
   theme(plot.title = element_text(hjust = 0.5,colour = "black", face = "bold", 
     size = 14, vjust = 1))
@@ -434,7 +434,7 @@ leaflet(data=MplsStops) %>%
   addCircleMarkers(lng = ~long,
              lat = ~lat,
              color = ~pal(problem),  
-             radius=3,
+             radius=1,
              stroke = FALSE,
              label = ~idNum) %>% 
   addLegend(position = "topleft",
